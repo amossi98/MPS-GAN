@@ -29,19 +29,19 @@ This repository contains the implementation of a Matrix Product State model as d
 ## Installation
 
 1. Clone the repository:
-```bash
-git clone https://github.com/amossi98/MPS-GAN.git
-cd MPS-GAN
-```
+   ```bash
+   git clone https://github.com/amossi98/MPS-GAN.git
+   cd MPS-GAN
+   ```
 
 
 3. Create a virtual environment and install dependencies:
    ```bash
-python -m venv env
-source env/bin/activate # For Linux/MacOS
-env\Scripts\activate # For Windows
-pip install -r requirements.txt
-```
+   python -m venv env
+   source env/bin/activate # For Linux/MacOS
+   env\Scripts\activate # For Windows
+   pip install -r requirements.txt
+   ```
 
 
 ## Usage
