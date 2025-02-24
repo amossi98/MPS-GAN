@@ -29,7 +29,7 @@ This repository contains the implementation of a Matrix Product State model as d
 ## Installation
 
 1. Clone the repository:
-git clone https://github.com/yourusername/MPS-GAN.git
+git clone https://github.com/amossi98/MPS-GAN.git
 cd MPS-GAN
 
 
