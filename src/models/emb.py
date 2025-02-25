@@ -44,8 +44,9 @@ class Emb(nn.Module):
         return torch.cos(torch.pi * i * x)
 
     def generate_legendre_basis(self, d):
-        """Precompute Legendre polynomials."""
-        return [functools.partial(self.legendre, n=i) for i in range(d)]
+        basis_functions = [lambda x, i=i: legendre(i, 2 * x - 1) for i in range(d)]
+        return basis_functions
+
     
     def legendre(self, x, n):
         """Compute the Legendre polynomial of degree n at x using recurrence relation."""
@@ -108,13 +109,40 @@ class Emb(nn.Module):
         if x.dim() == 0:
             x = x.unsqueeze(0)
 
-        b, n = x.shape
-        emb = torch.zeros((b, n, self.d), dtype=torch.float32)
+        # Handle 1D input (convert to (1, n))
+        if x.dim() == 1:
+            x = x.unsqueeze(0)  # Shape becomes (1, n)
 
-        for i in range(self.d):
-            emb[:, :, i] = self.basis_functions[i](x)
+        b, n = x.shape
+        d = self.d
+
+        if self.family == 'legendre':
+            # Compute Legendre polynomials P_0(x)=1, P_1(x)=x, and
+            # for k>=2: P_k(x) = ((2*k-1)*x*P_{k-1}(x) - (k-1)*P_{k-2}(x)) / k
+            emb = torch.empty(b, n, d, device=x.device, dtype=x.dtype)
+            emb[..., 0] = 1.0
+            if d > 1:
+                emb[..., 1] = x
+            for k in range(2, d):
+                emb[..., k] = ((2 * k - 1) * x * emb[..., k-1] - (k - 1) * emb[..., k-2]) / k
+        else:
+            emb = torch.empty(b, n, d, device=x.device, dtype=x.dtype)
+            for i in range(d):
+                emb[..., i] = self.basis_functions[i](x)
 
         if self.sigma > 0:
-            emb += torch.randn_like(emb) * self.sigma
+            emb = emb + torch.randn_like(emb) * self.sigma
 
         return emb
+
+
+
+
+
+def legendre(n, x):
+    if n == 0:
+        return torch.ones_like(x)
+    elif n == 1:
+        return x
+    else:
+        return ((2 * n - 1) * x * legendre(n - 1, x) - (n - 1) * legendre(n - 2, x)) / n

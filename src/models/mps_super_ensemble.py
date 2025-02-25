@@ -57,7 +57,7 @@ class MPSSuperEnsemble(nn.Module):
         y = torch.pow(y, 2)  # Square the outputs as per original design
         return y
 
-    def train_model(self, data_loader, n_epochs, test_loader=None, lr=0.01, weight_decay=1e-5, early_stopping=False):
+    def train(self, data_loader, n_epochs, test_loader=None, lr=0.01, weight_decay=1e-5, early_stopping=False):
         """
         Train the ensemble model using cross-entropy loss.
         

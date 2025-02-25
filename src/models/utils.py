@@ -39,24 +39,31 @@ def sample_from_v(v, percentile, emb, nbins=1000):
         torch.Tensor: Sampled value.
     """
     if percentile < 1e-3:
-        percentile = 1e-3
+        percentile = 1e-3  # Avoid percentile too close to zero
 
     lin = np.linspace(0, 1, nbins)
-    x = torch.tensor(lin, dtype=torch.float32).unsqueeze(-1)
+    x = torch.tensor(lin, dtype=torch.float32).squeeze(0).unsqueeze(-1)
     y = emb(x).squeeze(1)
-    
-    y = torch.einsum("bi,ij,bj->b", y, v, y)
-    cpd = y.cumsum(0) / y.sum()
-    
-    # Find sample based on percentile
-    idx = (cpd < percentile).nonzero().max()
-    
-    # Linear interpolation
-    lower, upper = cpd[idx], cpd[idx + 1]
-    interpolated_idx = idx + (percentile - lower) / (upper - lower)
-    sample = torch.lerp(x[idx], x[idx + 1], interpolated_idx - idx.float())
 
-    return sample
+    y = torch.einsum("bi,ij,bj->b", y, v, y)
+    cpd = y.cumsum(0)
+    cpd = cpd / cpd[-1]  # Normalize to [0,1]
+
+    vec = cpd < percentile
+
+    if not vec.any():  # If no values meet the condition, return the smallest x
+        return x[0]
+
+    idx = vec.nonzero().max()
+
+    # Linear interpolation
+    idx_float = idx.float()
+    lower_val = cpd[idx]
+    upper_val = cpd[idx + 1]
+    interpolated_idx = idx_float + (percentile - lower_val) / (upper_val - lower_val)
+
+    # Interpolate x values
+    return torch.lerp(x[idx], x[idx + 1], interpolated_idx - idx_float)
 
 
 def weight_reg(mps, l):
