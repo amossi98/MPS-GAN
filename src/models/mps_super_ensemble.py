@@ -120,8 +120,54 @@ class MPSSuperEnsemble(nn.Module):
             Tensor: Generated samples of shape (n_samples, n)
         """
         samples = torch.zeros(n_samples, self.n, device=self.mps[0].tensor.device)
+        
         if noise is None:
             noise = torch.rand(n_samples, self.n)
         for i in range(n_samples):
             samples[i] = self.mps[class_idx].sample(noise[i])
         return samples
+
+    def save(self, checkpoint_path):
+        """
+        Save the model to a checkpoint file.
+        
+        Args:
+            checkpoint_path (str): File path where the checkpoint will be saved.
+        """
+        checkpoint = {
+            'n': self.n,
+            'D': self.D,
+            'd': self.d,
+            'C': self.C,
+            'stddev': 0.5,  # Adjust if needed
+            'family': 'fourier',  # Adjust if needed
+            'sigma': 0,  # Adjust if needed
+            'state_dict': self.state_dict()
+        }
+        torch.save(checkpoint, checkpoint_path)
+
+    @classmethod
+    def load(cls, checkpoint_path, device='cpu'):
+        """
+        Load a model from a checkpoint.
+        
+        Args:
+            checkpoint_path (str): Path to the checkpoint file.
+            device (str): Device to map the model to.
+        Returns:
+            MPSSuperEnsemble: Loaded model.
+        """
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        model = cls(
+            n=checkpoint['n'],
+            D=checkpoint['D'],
+            d=checkpoint.get('d', 2),
+            C=checkpoint.get('C', 2),
+            stddev=checkpoint.get('stddev', 0.5),
+            family=checkpoint.get('family', 'fourier'),
+            sigma=checkpoint.get('sigma', 0)
+        )
+        model.load_state_dict(checkpoint['state_dict'])
+        model.to(device)
+        return model
+

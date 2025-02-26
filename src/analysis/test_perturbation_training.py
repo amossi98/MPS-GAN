@@ -38,7 +38,7 @@ def main():
     d = 20
     C = 2
     stddev = 0.1
-    n_sigma = 2  # for demonstration; increase for finer granularity
+    n_sigma = 10  # for demonstration; increase for finer granularity
     sigma_values = np.linspace(0, 2, n_sigma)
     acc_fourier = np.zeros(n_sigma)
     acc_legendre = np.zeros(n_sigma)
