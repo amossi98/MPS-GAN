@@ -21,7 +21,6 @@ This repository contains the implementation of a Matrix Product State model as d
   - **train/**: Scripts for training the model (both classification and GAN-style).
   - **utils/**: Helper functions and utilities.
   - **analysis/**: Further studies on the effect of some hyperparameters (bond dimension, number of bins, ...) on performances, quality, and speed.
-- **data/**: Folder that will contain the sampled data after training.
 - **tests/**: Unit tests to measure the quality of output samples in the data folder.
 
 ## Installation
