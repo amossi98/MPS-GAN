@@ -39,7 +39,7 @@ test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 # Define model hyperparameters
 n = 2  # Two features for 2 Moons
-model = MPSSuperEnsemble(n=n, D=30, d=30, C=2, stddev=0.05, family='fourier')  # Change family as needed
+model = MPSSuperEnsemble(n=n, D=10, d=30, C=2, stddev=0.05, family='fourier')  # Change family as needed
 model.to(device)
 include_class = True
 
@@ -82,12 +82,15 @@ generate_and_save_samples(
     filename=f'./data/tgan_2moon_{model.embedding.family}_pretrain.npy'
 )
 
-# Create GAN and train
-discriminator = Discriminator(n, include_class=include_class)
+# Initialize and pretrain the discriminator
+discriminator = Discriminator(n, include_class=include_class, device=device)
+print("Pretraining Discriminator on 2 Moon dataset...")
+discriminator.train(model, train_loader, n_epochs=10, lr=1e-2, test_loader=test_loader)
+
 gan = TGAN(model, discriminator, include_class=include_class)
 
 print("Training TGAN on 2 Moons dataset...")
-gan.train_tgan(train_loader, num_epochs=5, lr=1e-3, test_loader=test_loader)
+gan.train(train_loader, num_epochs=3, lr=1e-3, test_loader=test_loader)
 
 # Generate and save post-GAN samples
 generate_and_save_samples(

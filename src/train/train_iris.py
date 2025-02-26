@@ -41,7 +41,7 @@ test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 # Define model hyperparameters
 n = 4  # Four features for Iris dataset
-model = MPSSuperEnsemble(n=n, D=30, d=30, C=3, stddev=0.05, family='fourier')  # Change family for different embeddings
+model = MPSSuperEnsemble(n=n, D=4, d=10, C=3, stddev=0.05, family='fourier')  # Change family for different embeddings
 model.to(device)
 include_class = True
 
@@ -80,7 +80,7 @@ def generate_and_save_samples(model, nsamples, filename, apply_pca=True):
 
 # Pretrain the generator
 print("Pretraining the Iris model...")
-model.train(train_loader, n_epochs=1, lr=1e-2, test_loader=test_loader, weight_decay=0e-3)
+model.train(train_loader, n_epochs=100, lr=1e-2, test_loader=test_loader, weight_decay=0e-3)
 
 # Generate and save pre-GAN samples
 generate_and_save_samples(
@@ -90,12 +90,16 @@ generate_and_save_samples(
     apply_pca=True
 )
 
+# Initialize and pretrain the discriminator
+discriminator = Discriminator(n, include_class=include_class, device=device)
+print("Pretraining Discriminator on Iris dataset...")
+discriminator.train(model, train_loader, n_epochs=10, lr=1e-3, test_loader=test_loader)
+
 # Create GAN and train
-discriminator = Discriminator(n, include_class=include_class)
 gan = TGAN(model, discriminator, include_class=include_class)
 
 print("Training TGAN on Iris dataset...")
-gan.train_tgan(train_loader, num_epochs=1, lr=1e-3, test_loader=test_loader)
+gan.train(train_loader, num_epochs=5, lr=1e-3, test_loader=test_loader)
 
 # Generate and save post-GAN samples
 generate_and_save_samples(

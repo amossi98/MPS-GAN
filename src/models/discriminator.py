@@ -42,10 +42,10 @@ class Discriminator(nn.Module):
         """
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))  # Ensure output is between [0,1]
+        x = self.fc3(x) 
         return x
     
-    def train_discriminator(self, mps_super, data_loader, n_epochs=10, lr=0.01, test_loader=None, weight_decay=1e-5):
+    def train(self, mps_super, data_loader, n_epochs=10, lr=0.01, test_loader=None, weight_decay=1e-5):
         """
         Train the Discriminator on real and fake samples.
 
@@ -102,7 +102,7 @@ class Discriminator(nn.Module):
                 optimizer.step()
 
                 # Compute accuracy
-                correct = ((prediction > 0.5).float() == y).sum().item()
+                correct = ((prediction > 0).float() == y).sum().item()  # Threshold logits at 0
                 epoch_accuracy += correct / len(y)
 
                 # Print intermediate progress

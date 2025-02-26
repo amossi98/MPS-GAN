@@ -1,25 +1,23 @@
 """
-evaluate_all_generated_samples.py
-
 This script loads generated samples saved as .npy files from various experiments,
 computes an FID-like score comparing the generated samples to their corresponding 
 real datasets (iris, 2moon, and spiral), and visualizes scatter plots and PCA projections.
-If the generated sample array has more than 2 columns, the last column is assumed to be
-the class label and is used for coloring the plots.
+If the generated sample array has more columns than the real data features, the remaining columns are assumed to be
+the class labels and are used for coloring the plots.
 
-Expected files (if not otherwise specified, assume Fourier embedding when not indicated):
-  - mps_2moon_legendre.npy
-  - mps_2moon_fourier.npy
-  - mps_iris_legendre.npy
-  - mps_iris_fourier.npy
-  - mps_spiral_fourier_new.npy
-  - mps_spiral_legendre.npy
-  - tgan_2moon_legendre.npy
-  - tgan_2moon_fourier.npy
-  - tgan_iris_legendre.npy
-  - tgan_iris_fourier.npy
-  - tgan_spiral_fourier_new.npy
-  - tgan_spiral_legendre.npy
+Expected files (embedding can be legendre or fourier):
+  - tgan_iris_legendre_pretrain.npy
+  - tgan_iris_legendre_postgan.npy
+  - tgan_iris_fourier_pretrain.npy
+  - tgan_iris_fourier_postgan.npy
+  - tgan_2moon_legendre_pretrain.npy
+  - tgan_2moon_legendre_postgan.npy
+  - tgan_2moon_fourier_pretrain.npy
+  - tgan_2moon_fourier_postgan.npy
+  - tgan_spiral_legendre_pretrain.npy
+  - tgan_spiral_legendre_postgan.npy
+  - tgan_spiral_fourier_pretrain.npy
+  - tgan_spiral_fourier_postgan.npy
 
 The FID-like score is computed as:
     FID = ||mu_real - mu_gen||^2 + Tr(sigma_real + sigma_gen - 2*(sigma_real*sigma_gen)^(1/2))
@@ -67,11 +65,11 @@ def load_real_data(dataset_type: str) -> np.ndarray:
         dataset_type (str): One of 'iris', '2moon', or 'spiral'.
     
     Returns:
-        np.ndarray: Real data samples (using the first two dimensions).
+        np.ndarray: Normalized real data samples.
     """
     if dataset_type.lower() == 'iris':
         iris = load_iris()
-        data = iris.data[:, :2]  # Use first two features
+        data = iris.data  # Use all four features
         data_min = data.min(axis=0)
         data_max = data.max(axis=0)
         data_norm = (data - data_min) / (data_max - data_min)
@@ -90,15 +88,14 @@ def load_real_data(dataset_type: str) -> np.ndarray:
 def plot_scatter(gen_samples: np.ndarray, title: str):
     """
     Plot a scatter plot of generated samples.
-    If gen_samples has more than 2 columns, the last column is assumed to be class labels.
+    If gen_samples has more columns than features, the last column is assumed to be class labels.
     
     Args:
         gen_samples (np.ndarray): Generated samples.
         title (str): Plot title.
     """
     plt.figure(figsize=(5, 5))
-    if gen_samples.shape[1] > 2:
-        # Use the last column as class labels for coloring.
+    if gen_samples.shape[1] > 2:  # Assuming features + label
         labels = gen_samples[:, -1]
         sc = plt.scatter(gen_samples[:, 0], gen_samples[:, 1], c=labels, cmap='viridis', alpha=0.7)
         plt.colorbar(sc, label='Class Label')
@@ -111,36 +108,43 @@ def plot_scatter(gen_samples: np.ndarray, title: str):
     plt.grid(True)
     plt.show()
 
-def plot_pca(real_samples: np.ndarray, gen_samples: np.ndarray, title: str):
+def plot_pca(real_samples: np.ndarray, gen_samples: np.ndarray, title: str, dataset_type: str):
     """
     Project real and generated samples to 2D using PCA and plot.
-    For generated samples with class labels (more than 2 columns), colors are set by the labels.
     
     Args:
         real_samples (np.ndarray): Real samples, shape (N, d).
-        gen_samples (np.ndarray): Generated samples, shape (M, d) or (M, d+1) if labels appended.
+        gen_samples (np.ndarray): Generated samples, shape (M, d).
         title (str): Plot title.
+        dataset_type (str): Dataset type for formatting.
     """
     pca = PCA(n_components=2)
     pca.fit(real_samples)
     real_2d = pca.transform(real_samples)
-    # Use only coordinates for generated samples (first two columns)
-    gen_coords = gen_samples[:, :2]
-    gen_2d = pca.transform(gen_coords)
+    gen_2d = pca.transform(gen_samples)
     
     plt.figure(figsize=(5, 5))
     plt.scatter(real_2d[:, 0], real_2d[:, 1], c='gray', alpha=0.5, label='Real Data')
-    if gen_samples.shape[1] > 2:
+    if gen_samples.shape[1] < real_samples.shape[1] + 1:  # Check if labels are present
+        plt.scatter(gen_2d[:, 0], gen_2d[:, 1], c='blue', alpha=0.7, label='Generated Data')
+    else:
         labels = gen_samples[:, -1]
         sc = plt.scatter(gen_2d[:, 0], gen_2d[:, 1], c=labels, cmap='viridis', alpha=0.7, label='Generated Data')
         plt.colorbar(sc, label='Class Label')
-    else:
-        plt.scatter(gen_2d[:, 0], gen_2d[:, 1], c='blue', alpha=0.7, label='Generated Data')
     plt.title(title)
     plt.xlabel("PC 1")
     plt.ylabel("PC 2")
     plt.legend()
     plt.grid(True)
+    
+    # Apply Iris-specific formatting
+    if dataset_type.lower() == 'iris':
+        plt.xticks([-0.5, 0, 0.5])
+        plt.yticks([-0.5, 0, 0.5])
+        plt.xlim(-0.8, 0.8)
+        plt.ylim(-0.6, 0.6)
+        plt.tick_params(axis='both', which='major', labelsize=14)
+        plt.tight_layout()
     plt.show()
 
 def evaluate_file(file_path: str, dataset_type: str) -> float:
@@ -156,45 +160,47 @@ def evaluate_file(file_path: str, dataset_type: str) -> float:
         float: The computed FID-like score.
     """
     gen_samples = np.load(file_path)
-    # For FID, only use first 2 columns
-    gen_samples_eval = gen_samples[:, :2] if gen_samples.shape[1] > 2 else gen_samples
     real_samples = load_real_data(dataset_type)
+    # Extract features matching real data dimensions
+    real_features = real_samples.shape[1]
+    gen_samples_eval = gen_samples[:, :real_features]
+    
     fid = calculate_fid(real_samples, gen_samples_eval)
     base_name = os.path.basename(file_path)
     
-    # Plot scatter (with labels if available)
-    if not dataset_type == 'iris':
+    # Plot scatter (2D datasets) or PCA (iris)
+    if dataset_type != 'iris':
         plot_scatter(gen_samples, f"{base_name}\nFID: {fid:.4f}")
-    # Plot PCA projection (using only coordinates)
     else:
-        plot_pca(real_samples, gen_samples_eval, f"PCA Projection: {base_name}")
+        plot_pca(real_samples, gen_samples_eval, f"PCA Projection: {base_name}", dataset_type)
     
     return fid
 
 def main():
-    # List of generated sample files (adjust names as needed)
+    # List of generated sample files
     files = [
-        "mps_2moon_legendre.npy",
-        "mps_2moon_fourier.npy",
-        "mps_iris_legendre.npy",
-        "mps_iris_fourier.npy",
-        "mps_spiral_fourier.npy",
-        "mps_spiral_legendre.npy",
-        "tgan_2moon_legendre.npy",
-        "tgan_2moon_fourier.npy",
-        "tgan_iris_legendre.npy",
-        "tgan_iris_fourier.npy",
-        "tgan_spiral_fourier.npy",
-        "tgan_spiral_legendre.npy"
+        # Iris dataset
+        # "tgan_iris_legendre_pretrain.npy",
+        # "tgan_iris_legendre_postgan.npy",
+        "tgan_iris_fourier_pretrain.npy",
+        "tgan_iris_fourier_postgan.npy",
+        # 2 Moon dataset
+        # "tgan_2moon_legendre_pretrain.npy",
+        # "tgan_2moon_legendre_postgan.npy",
+        "tgan_2moon_fourier_pretrain.npy",
+        "tgan_2moon_fourier_postgan.npy",
+        # Spiral dataset
+        # "tgan_spiral_legendre_pretrain.npy",
+        # "tgan_spiral_legendre_postgan.npy",
+        "tgan_spiral_fourier_pretrain.npy",
+        "tgan_spiral_fourier_postgan.npy",
     ]
     
-    # Folder where the .npy files are stored.
-    data_folder = os.path.join(os.path.dirname(__file__), "data")
+    data_folder = "./data"
     
     results = {}
     for file_name in files:
         file_path = os.path.join(data_folder, file_name)
-        # Determine dataset type based on filename.
         if "iris" in file_name.lower():
             dataset_type = "iris"
         elif "2moon" in file_name.lower():
@@ -209,7 +215,7 @@ def main():
         fid = evaluate_file(file_path, dataset_type)
         results[file_name] = fid
     
-    print("FID Scores:")
+    print("\nFID Scores:")
     for fname, fid in results.items():
         print(f"{fname}: {fid:.4f}")
 
