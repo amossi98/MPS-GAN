@@ -6,7 +6,7 @@ MPS-GAN is a research-focused project that implements a quantum-inspired Matrix 
 
 ## Overview
 
-This repository contains the implementation of a Matrix Product State model as described in the [master’s thesis](docs/thesis.pdf). The model:
+This repository contains the implementation of a Matrix Product State model as described in the [master’s thesis](https://arxiv.org/html/2406.17441v1). The model:
 - Uses tensor networks for data representation and processing.
 - Implements advanced embedding functions (e.g., Fourier and Legendre embeddings).
 - Trains with both standard cross-entropy loss for classification and adversarial loss in a GAN-style setup for generation.
@@ -46,27 +46,83 @@ This repository contains the implementation of a Matrix Product State model as d
 
 ## Usage
 
-### Training the Model:
-To train the MPS model for classification:
+### Train Models
+You can train different models using the provided scripts. The training process includes:
+
+Pretraining an MPS-based generator
+Training a TGAN (MPS + Discriminator GAN)
+Saving generated samples before and after GAN training
+1. Train on 2 Moons
+   ```bash
+   python -m src.train.train_moons
+   ```
+2. Train on Spiral
+   ```bash
+   python -m src.train.train_spiral
+   ```
+3. Train on Iris
+   ```bash
+   python -m src.train.train_iris
+   ```
+   
+Each script will save intermediate results and generate .npy files with sample data.
+
+### Evaluate Generated Samples
+Once the models are trained, evaluate the quality of generated samples using an FID-like metric:
+
 ```bash
-python src/training/train_classification.py --config config/classification.yaml
+python -m src.tests.evaluate_generated_samples
+```
+This will compute FID scores and visualize scatter plots of generated vs. real samples.
+
+### Perturbation & Noise Analysis
+You can analyze how embedding perturbations affect inference performance:
+```bash
+python -m src.analysis.test_perturbation_inference
 ```
 
-### GAN-Style Training:
-To perform adversarial training:
+Or study how perturbations during training influences results:
 ```bash
-python src/training/train_gan.py --config config/gan.yaml
+python -m src.analysis.test_perturbations_training
 ```
 
-### Sampling New Data:
+Both scripts generate plots comparing different embedding families (e.g., Fourier vs. Legendre).
+
+### Saving and loaging models
+
+```python
+import torch
+from src.models.mps_super_ensemble import MPSSuperEnsemble
+
+# Create a model instance with some example parameters
+model = MPSSuperEnsemble(n=10, D=5, d=2, C=2, stddev=0.5, family='fourier', sigma=0)
+
+# (Optional: Train your model here or perform some operations)
+
+# Save the model to a checkpoint file
+model.save("checkpoint.pth")
+print("Model saved successfully.")
+
+# Load the model from the checkpoint file
+loaded_model = MPSSuperEnsemble.load("checkpoint.pth", device='cpu')
+print("Model loaded successfully.")
+```
+
+### Sampling New Data
 To generate new samples from a trained model:
-```bash
-python src/sampling/sample.py --model_path path/to/model.pt --num_samples 100
+```python
+import torch
+from src.models.mps_super_ensemble import MPSSuperEnsemble
+
+model = MPSSuperEnsemble.load("path/to/checkpoint.pth")  # Load trained model
+noise_vector = torch.rand(1, model.n)  # Generate noise
+sample = model.sample()  # Generate a new sample
 ```
+
 
 ## Results
 
-Results and analysis, including visualizations of generated samples and evaluation metrics, can be found in the `experiments/` directory. Refer to the thesis for detailed explanations and experimental setups.
+The results and comprehensive analysis, including visualizations of the generated samples and detailed evaluation metrics, are available in the original PDF file of the thesis. You can access the document via the provided [arXiv link](https://arxiv.org/html/2406.17441v1).
 
 
 ## Contact
