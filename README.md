@@ -18,13 +18,11 @@ This repository contains the implementation of a Matrix Product State model as d
 - **docs/**: Documentation including the thesis, supplementary materials, and experiment results.
 - **src/**: Source code for the project.
   - **models/**: Core MPS model implementation.
-  - **training/**: Scripts for training the model (both classification and GAN-style).
-  - **sampling/**: Implementation of the exact sampling algorithm.
-  - **data/**: Data preprocessing and loader scripts.
+  - **train/**: Scripts for training the model (both classification and GAN-style).
   - **utils/**: Helper functions and utilities.
-- **experiments/**: Configuration files, logs, and generated figures.
-- **notebooks/**: Jupyter notebooks for interactive exploration and visualization.
-- **tests/**: Unit tests to ensure code reliability.
+  - **analysis/**: Further studies on the effect of some hyperparameters (bond dimension, number of bins, ...) on performances, quality, and speed.
+- **data/**: Folder that will contain the sampled data after training.
+- **tests/**: Unit tests to measure the quality of output samples in the data folder.
 
 ## Installation
 
