@@ -15,7 +15,7 @@ This repository contains the implementation of a Matrix Product State model as d
 ## Repository Structure
 
 - **README.md**: Project overview, installation instructions, and usage examples.
-- **docs/**: Documentation including the thesis, supplementary materials, and experiment results.
+- **docs/**: Documentation including the thesis.
 - **src/**: Source code for the project.
   - **models/**: Core MPS model implementation.
   - **train/**: Scripts for training the model (both classification and GAN-style).
