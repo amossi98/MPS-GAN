@@ -6,7 +6,7 @@ MPS-GAN is a research-focused project that implements a quantum-inspired Matrix 
 
 ## Overview
 
-This repository contains the implementation of a Matrix Product State model as described in the [master’s thesis](https://arxiv.org/html/2406.17441v1). The model:
+This repository contains the implementation of a Matrix Product State model as described in the [master’s thesis](https://link.springer.com/epdf/10.1007/s42484-025-00272-6?sharing_token=O-VFAiCLkJylIHPWSRqVk_e4RwlQNchNByi7wbcMAY5EzDoWhNPtTqOhCRWP1_KKfZzuucRwp64qzGpENIEKYfF03TRv0M2W-_fUgTT0fuyDuGbeGkHYeiDtnoJPd5kPTJXQBmnVQAGa5dWgwC7NkV2TSRkHxchKmFGeci-8QVM%3D). The model:
 - Uses tensor networks for data representation and processing.
 - Implements advanced embedding functions (e.g., Fourier and Legendre embeddings).
 - Trains with both standard cross-entropy loss for classification and adversarial loss in a GAN-style setup for generation.
